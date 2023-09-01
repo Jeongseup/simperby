@@ -1,5 +1,11 @@
 # simperby ops for ethkon
+### Build
+```bash
+git clone git@github.com:Jeongseup/simperby.git
+cargo build --bin simperby-cli --release       
+```
 
+### Init chain
 ```bash
 # make a dir
 dir="~$HOME/.simperby-server" # or ~/.simperby-client
