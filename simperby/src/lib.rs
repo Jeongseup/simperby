@@ -1,6 +1,5 @@
 mod storage;
 pub mod types;
-
 use eyre::eyre;
 use eyre::Result;
 use simperby_consensus::*;
@@ -42,6 +41,39 @@ pub struct Client {
 }
 
 impl Client {
+    pub async fn dump_auth(path: &str) -> Result<()> {
+        let auth = Auth {
+            private_key: PrivateKey {
+                key: HexSerializedBytes { data: [0; 32] },
+            },
+        };
+        let auth = serde_spb::to_string(&auth).unwrap();
+        tokio::fs::write(format!("{path}/.simperby/auth.json"), auth.clone())
+            .await
+            .unwrap();
+
+        Ok(())
+    }
+    pub async fn dump_server_config(path: &str) -> Result<()> {
+        let server_config = ServerConfig {
+            peers_port: 37000,
+            governance_port: 37001,
+            consensus_port: 37002,
+            repository_port: 37003,
+            broadcast_interval_ms: Some(500),
+            fetch_interval_ms: Some(500),
+        };
+
+        let server_config = serde_spb::to_string(&server_config).unwrap();
+        tokio::fs::write(
+            format!("{path}/.simperby/server_config.json"),
+            server_config.clone(),
+        )
+        .await
+        .unwrap();
+
+        Ok(())
+    }
     pub async fn dump_genesis(path: &str) -> Result<()> {
         let (rs, keys) = test_utils::generate_standard_genesis(4);
 

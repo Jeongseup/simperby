@@ -23,6 +23,7 @@ simperby-network = { version = "0.1.0", path = "../network" }
 simperby-governance = { version = "0.1.0", path = "../governance" }
 simperby-consensus = { version = "0.1.0", path = "../consensus" }
 simperby-repository = { version = "0.1.0", path = "../repository" }
+simperby-test-suite = { version = "0.1.0", path = "../test-suite" }
 thiserror = "1.0.32"
 semver = "1.0.0"
 
