@@ -1,20 +1,18 @@
-#!/env/bin/bash
+#!/usr/bin/env bash
 
-set -ux
+server_dir=$1
+client1_dir=$2
+client2_dir=$3
+client3_dir=$4
 
-###############################
-########## init chain #########
-###############################
 
-# make a dir
-chain_dir="$HOME/ethcon-chain"
-server_dir="$chain_dir/server"
-client1_dir="$chain_dir/client1"
-client2_dir="$chain_dir/client2"
-client3_dir="$chain_dir/client3"
+echo "directory setup"
+echo "server: $server_dir"
+echo "server: $server_dir"
+echo "server: $server_dir"
+echo "server: $server_dir"
 
-# remove previous data
-rm -rf $chain_dir
+
 
 # make directories
 mkdir -p $server_dir
@@ -60,17 +58,14 @@ jq '.private_key = "706a6cfa043cfbfb3cb8fe81c219732736a726aa28802838da0f0ed17913
 simperby-cli $client1_dir dump-configs && \
     jq '.private_key = "430090e9122e9edff073fa0fa7a465f67a9aad99b885fc484893f33b2a5593e9"' "$client1_dir/.simperby/auth.json" > temp.json && \
     mv temp.json "$client1_dir/.simperby/auth.json" && \
-    cat $client1_dir/.simperby/auth.json
-
-simperby-cli $client1_dir peer add "member-0003" 127.0.0.1:37000 
-
+    cat $client1_dir/.simperby/auth.json && \
+    simperby-cli $client1_dir peer add "member-0003" 127.0.0.1:37000 
 
 simperby-cli $client2_dir dump-configs && \
     jq '.private_key = "1f0090ed3240e03adec8e13baf6e2ebe725dc01ab0fc3894c92cf8cbb92f0e10"' "$client2_dir/.simperby/auth.json" > temp.json && \
     mv temp.json "$client2_dir/.simperby/auth.json" && \
-    cat $client2_dir/.simperby/auth.json
-
-simperby-cli $client2_dir peer add "member-0003" 127.0.0.1:37000
+    cat $client2_dir/.simperby/auth.json && \
+    simperby-cli $client2_dir peer add "member-0003" 127.0.0.1:37000
 
 echo "setup client3 node: $client3_dir" && \
     simperby-cli $client3_dir dump-configs && \

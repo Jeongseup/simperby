@@ -48,7 +48,7 @@ pub async fn setup_pre_genesis_repository(path: &str, reserved_state: ReservedSt
 
     run_command(format!("cd {path} && git add -A")).await;
     run_command(format!(
-        "cd {path} && git config user.name 'Test' && git config user.email 'test@test.com'"
+        "cd {path} && git config user.name 'Jeongseup' && git config user.email 'seup87@gmail.com'"
     ))
     .await;
     run_command(format!("cd {path} && git commit -m 'genesis'")).await;

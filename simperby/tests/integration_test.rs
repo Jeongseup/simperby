@@ -52,7 +52,10 @@ async fn normal_1() {
     let server_config = generate_server_config();
 
     // Setup repository and server.
-    let server_dir = create_temp_dir();
+    // let server_dir = create_temp_dir();
+    let server_dir = "/Users/jeongseup/simperby-test/server";
+    run_command(format!("mkdir -p {server_dir}")).await;
+
     setup_pre_genesis_repository(&server_dir, fi.reserved_state.clone()).await;
     Client::genesis(&server_dir).await.unwrap();
     Client::init(&server_dir).await.unwrap();
@@ -68,14 +71,20 @@ async fn normal_1() {
 
     // Setup clients.
     let mut clients = Vec::new();
-    for (_, key) in keys.iter().take(3) {
-        let dir = create_temp_dir();
-        run_command(format!("cp -a {server_dir}/. {dir}/")).await;
+    // let mut client_dirs = Vec::new();
+    // let mut index: u8;
+    for (idx, (_, key)) in keys.iter().take(3).enumerate() {
+        // let client_dir = "/Users/jeongseup/simperby-test/client{idx}";
+        let client_dir: &str = &format!("/Users/jeongseup/simperby-test/client{idx}");
+        run_command(format!("mkdir -p {client_dir}")).await;
+        // let dir = create_temp_dir();
+        // let index == 1;
+        run_command(format!("cp -a {server_dir}/. {client_dir}/")).await;
         let auth = Auth {
             private_key: key.clone(),
         };
         let port = server_config.peers_port;
-        let mut client = Client::open(&dir, Config {}, auth).await.unwrap();
+        let mut client = Client::open(&client_dir, Config {}, auth).await.unwrap();
         client
             .add_peer(
                 fi.reserved_state.members[3].name.clone(),
@@ -84,6 +93,7 @@ async fn normal_1() {
             .await
             .unwrap();
         clients.push(client);
+        // client_dirs.push(client_dir.clone());
     }
 
     // Run server.
@@ -93,8 +103,8 @@ async fn normal_1() {
     let server_config_ = server_config.clone();
     let server_dir_ = server_dir.clone();
     tokio::spawn(async move {
-        let client = Client::open(&server_dir_, Config {}, auth).await.unwrap();
-        let task = client
+        let server_client = Client::open(&server_dir_, Config {}, auth).await.unwrap();
+        let task = server_client
             .serve(
                 server_config_,
                 simperby_repository::server::PushVerifier::VerifierExecutable(
@@ -111,6 +121,12 @@ async fn normal_1() {
     for client in clients.iter_mut() {
         client.update_peer().await.unwrap();
     }
+
+    // let (_, agenda_commit) = clients[0]
+    //     .repository_mut()
+    //     .create_agenda(fi.reserved_state.members[0].name.clone())
+    //     .await
+    //     .unwrap();
 
     // Step 1: create an agenda and propagate it.
     log::info!("STEP 1");
@@ -151,6 +167,25 @@ async fn normal_1() {
         client.progress_for_consensus().await.unwrap();
     }
     sync_each_other(&mut clients).await;
+
+    let height = clients[0]
+        .repository()
+        .read_last_finalization_info()
+        .await
+        .unwrap()
+        .header
+        .height;
+
+    // clients[0].repository().read_commit(commit_hash)
+
+    println!("created block height: {}!", height);
+    if height == 1 {
+        let client_dir = "/Users/jeongseup/simperby-test/client0";
+        run_command(format!(
+            "cd {client_dir} &&  git remote add origin https://github.com/Jeongseup/simperby-devnet.git"
+        )).await;
+        run_command(format!("cd {client_dir} && git push ")).await;
+    }
 
     // Step 3: check the result.
     for client in clients {
