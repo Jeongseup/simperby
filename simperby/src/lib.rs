@@ -2,6 +2,8 @@ mod storage;
 pub mod types;
 use eyre::eyre;
 use eyre::Result;
+use rust_decimal::Decimal;
+
 use simperby_consensus::*;
 use simperby_core::utils::get_timestamp;
 use simperby_core::*;
@@ -11,6 +13,9 @@ use simperby_network::peers::Peers;
 use simperby_network::*;
 use simperby_repository::raw::RawRepository;
 use simperby_repository::*;
+use simperby_settlement::execution::{Execution, ExecutionMessage, TransferFungibleToken};
+use simperby_settlement::*;
+
 use std::net::SocketAddrV4;
 use std::sync::Arc;
 use tokio::fs;
@@ -42,6 +47,44 @@ pub struct Client {
 }
 
 impl Client {
+    pub async fn post_transaction(
+        path: &str,
+        config: types::Config,
+        auth: Auth,
+        network: &str,
+        contract_sequence: u128,
+        erc20_address: HexSerializedVec,
+        amount: Decimal,
+        receiver_address: HexSerializedVec,
+    ) -> Result<()> {
+        let mut client = Client::open(&path, config, auth.clone()).await?;
+        // let erc20_address = HexSerializedVec { data: vec![0x00] };
+        // let decimal = Decimal::from(1000);
+        // let receiver_address = HexSerializedVec { data: vec![0x12] };
+        let tx = execution::create_execution_transaction(
+            &Execution {
+                target_chain: network.to_owned(),
+                contract_sequence,
+                message: ExecutionMessage::TransferFungibleToken(TransferFungibleToken {
+                    token_address: erc20_address,
+                    amount,
+                    receiver_address,
+                }),
+            },
+            "governance".to_owned(),
+            get_timestamp(),
+        )
+        .unwrap();
+
+        client
+            .repository_mut()
+            .create_transaction(tx)
+            .await
+            .unwrap();
+
+        Ok(())
+    }
+
     pub async fn dump_configs(path: &str) -> Result<()> {
         let config = Config {};
         let auth = Auth {

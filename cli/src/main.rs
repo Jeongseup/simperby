@@ -1,8 +1,9 @@
 use clap::Parser;
 use eyre::eyre;
+use rust_decimal::Decimal;
 use simperby::{types::*, Client};
 use simperby_cli::cli::{self, Commands, CreateCommands, PeerCommands, SignCommands};
-use simperby_core::{utils::get_timestamp, *};
+use simperby_core::{utils::get_timestamp, HexSerializedVec, *};
 use simperby_repository::{
     raw::RawRepository,
     server::{build_simple_git_server, PushVerifier},
@@ -13,6 +14,10 @@ async fn read_config<T: serde::de::DeserializeOwned>(path: &str) -> Option<T> {
     serde_spb::from_str(&content).ok()
 }
 
+fn string_to_hex(s: &str) -> HexSerializedVec {
+    HexSerializedVec::from(s.as_bytes().to_vec())
+}
+
 async fn run(
     args: cli::Cli,
     path: String,
@@ -21,6 +26,33 @@ async fn run(
     server_config: Option<ServerConfig>,
 ) -> eyre::Result<()> {
     match (args.command, config, auth, server_config) {
+        (
+            Commands::PostTransaction {
+                chain_name,
+                contract_sequence,
+                erc20_token_name,
+                amount,
+                receiver_address,
+            },
+            Some(config),
+            Some(auth),
+            _,
+        ) => {
+            let erc20_address = string_to_hex(&erc20_token_name);
+            let amount: Decimal = Decimal::new(amount, 0);
+            let receiver_address = string_to_hex(&receiver_address);
+            Client::post_transaction(
+                &path,
+                config,
+                auth,
+                &chain_name,
+                contract_sequence,
+                erc20_address,
+                amount,
+                receiver_address,
+            )
+            .await
+        }
         (Commands::DumpConfigs, _, _, _) => Client::dump_configs(&path).await,
         (Commands::DumpServerConfig, _, _, _) => Client::dump_server_config(&path).await,
         (Commands::DumpGenesis, _, _, _) => Client::dump_genesis(&path).await,

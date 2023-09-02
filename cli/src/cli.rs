@@ -76,7 +76,18 @@ pub enum SignCommands {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Post EVM Execution transation for controlling treasury contract
+    PostTransaction {
+        // EVM chain name at posting your transaction
+        chain_name: String,
+        contract_sequence: u128,
+        erc20_token_name: String,
+        amount: i64,
+        receiver_address: String,
+    },
+    /// Dumps auth.json and config.json files for client users
     DumpConfigs,
+    /// Dumps server_config.json for server
     DumpServerConfig,
     /// Dumps genesis block files to the path
     DumpGenesis,
@@ -113,9 +124,7 @@ pub enum Commands {
     Create(CreateCommands),
     /// Vote on the agenda, broadcasting to the network.
     /// It will also leave a `vote` tag on the given commit (with some postfix).
-    Vote {
-        revision: String,
-    },
+    Vote { revision: String },
     /// Veto the round.
     ///
     /// It will be broadcasted to the network as a nil-vote
@@ -140,9 +149,7 @@ pub enum Commands {
 
     // ----- Information Commands ----- //
     /// Show the overall information of the given commit.
-    Show {
-        revision: String,
-    },
+    Show { revision: String },
     /// Show the status of the Simperby repository.
     ///
     /// It checkes the following for the current directory:
@@ -222,7 +229,5 @@ pub enum Commands {
         signature: String,
     },
     /// A special command triggered by the Git hook, which is used to notify the push request.
-    NotifyPush {
-        commit: String,
-    },
+    NotifyPush { commit: String },
 }

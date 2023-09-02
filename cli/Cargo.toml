@@ -24,3 +24,4 @@ env_logger = "0.10.0"
 color-eyre = "0.6.2"
 simperby-test-suite = { path = "../test-suite" }
 serde_json = { version = "1.0", features = ["preserve_order"] }
+rust_decimal = "1.32.0"
