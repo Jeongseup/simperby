@@ -15,6 +15,7 @@ use std::net::SocketAddrV4;
 use std::sync::Arc;
 use tokio::fs;
 use tokio::sync::RwLock;
+use types::Config;
 
 pub use simperby_consensus;
 pub use simperby_core;
@@ -41,13 +42,23 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn dump_auth(path: &str) -> Result<()> {
+    pub async fn dump_configs(path: &str) -> Result<()> {
+        let config = Config {};
         let auth = Auth {
             private_key: PrivateKey {
                 key: HexSerializedBytes { data: [0; 32] },
             },
         };
+
+        let config = serde_spb::to_string(&config).unwrap();
         let auth = serde_spb::to_string(&auth).unwrap();
+
+        tokio::fs::write(
+            format!("{path}/{}", ".simperby/config.json"),
+            config.clone(),
+        )
+        .await
+        .unwrap();
         tokio::fs::write(format!("{path}/.simperby/auth.json"), auth.clone())
             .await
             .unwrap();

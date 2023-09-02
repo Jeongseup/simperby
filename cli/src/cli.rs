@@ -76,7 +76,7 @@ pub enum SignCommands {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    DumpAuth,
+    DumpConfigs,
     DumpServerConfig,
     /// Dumps genesis block files to the path
     DumpGenesis,

@@ -2,7 +2,7 @@
 ### Build
 ```bash
 git clone git@github.com:Jeongseup/simperby.git
-cargo build --bin simperby-cli --release       
+cargo build --bin simperby-cli --release && mv ./target/release/simperby-cli $HOME/.cargo/bin  
 ```
 
 ### Init chain
@@ -41,3 +41,14 @@ git push --all
 ```
 
 
+### Serve Chain 
+```bash
+# server side
+simperby-cli $dir dump-configs
+simperby-cli $dir dump-server-config
+
+# change auth with your private key
+vi $dir/.simperby/auth.json
+
+# client side
+```
