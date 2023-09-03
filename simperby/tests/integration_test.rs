@@ -1,10 +1,13 @@
 use dotenv::dotenv;
+use rust_decimal::Decimal;
 use simperby::types::{Auth, Config};
 use simperby::*;
+use simperby_core::utils::get_timestamp;
 use simperby_core::*;
+use simperby_settlement::execution::{Execution, ExecutionMessage, TransferFungibleToken};
+use simperby_settlement::*;
 use simperby_test_suite::*;
 use std::env;
-use std::process::exit;
 
 fn generate_server_config() -> ServerConfig {
     ServerConfig {
@@ -15,6 +18,10 @@ fn generate_server_config() -> ServerConfig {
         broadcast_interval_ms: Some(500),
         fetch_interval_ms: Some(500),
     }
+}
+
+fn string_to_hex(s: &str) -> HexSerializedVec {
+    HexSerializedVec::from(s.as_bytes().to_vec())
 }
 
 async fn sync_each_other(clients: &mut [Client]) {
@@ -51,14 +58,18 @@ fn build_simple_git_server() -> String {
 #[tokio::test]
 async fn normal_1() {
     setup_test();
+    dotenv().ok();
+
     let (fi, keys) = test_utils::generate_fi(4);
     let server_config = generate_server_config();
+
     // Setup repository and server.
     let server_dir = "/Users/jeongseup/simperby-test/server";
     run_command(format!("mkdir -p {server_dir}")).await;
     setup_pre_genesis_repository(&server_dir, fi.reserved_state.clone()).await;
     Client::genesis(&server_dir).await.unwrap();
     Client::init(&server_dir).await.unwrap();
+
     // Add push configs to server repository.
     run_command(format!(
         "cd {server_dir} && git config receive.advertisePushOptions true"
@@ -68,6 +79,7 @@ async fn normal_1() {
         "cd {server_dir} && git config sendpack.sideband false"
     ))
     .await;
+
     // Setup clients.
     let mut clients = Vec::new();
     for (idx, (_, key)) in keys.iter().take(3).enumerate() {
@@ -114,6 +126,48 @@ async fn normal_1() {
     for client in clients.iter_mut() {
         client.update_peer().await.unwrap();
     }
+
+    // make some transactions
+    let erc20_token_name = match env::var("ERC20_TOKEN_NAME") {
+        Ok(value) => value,
+        Err(_) => {
+            eprintln!("ERC20_TOKEN_NAME 환경 변수를 찾을 수 없습니다.");
+            return;
+        }
+    };
+    let amount: i64 = match env::var("TRASNFER_AMOUNT").unwrap().parse() {
+        Ok(value) => value,
+        Err(_) => {
+            eprintln!("TRASNFER_AMOUNT 환경 변수를 찾을 수 없습니다.");
+            return;
+        }
+    };
+
+    let erc20_address = string_to_hex(erc20_token_name.as_str());
+    let amount: Decimal = Decimal::new(amount, 0);
+    let receiver_address = string_to_hex("0x02958E702bE0a85bE25bfD2c45C21Fa79eFc8Cf7");
+    let network = "LineaTestnet";
+    let contract_sequence: u128 = 0;
+    let tx = execution::create_execution_transaction(
+        &Execution {
+            target_chain: network.to_owned(),
+            contract_sequence,
+            message: ExecutionMessage::TransferFungibleToken(TransferFungibleToken {
+                token_address: erc20_address,
+                amount,
+                receiver_address,
+            }),
+        },
+        "governance".to_owned(),
+        get_timestamp(),
+    )
+    .unwrap();
+
+    clients[0]
+        .repository_mut()
+        .create_transaction(tx)
+        .await
+        .unwrap();
 
     // Step 1: create an agenda and propagate it.
     log::info!("STEP 1");

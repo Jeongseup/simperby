@@ -353,7 +353,7 @@ async fn main() -> eyre::Result<()> {
     env_logger::init();
 
     let args = cli::Cli::parse();
-    let path: String = args.path.display().to_string();
+    let path = args.path.display().to_string();
     let config: Option<Config> = read_config(&format!("{path}/.simperby/config.json")).await;
     let auth: Option<Auth> = read_config(&format!("{path}/.simperby/auth.json")).await;
     let server_config: Option<ServerConfig> =
