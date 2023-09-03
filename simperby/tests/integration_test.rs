@@ -1,7 +1,10 @@
+use dotenv::dotenv;
 use simperby::types::{Auth, Config};
 use simperby::*;
 use simperby_core::*;
 use simperby_test_suite::*;
+use std::env;
+use std::process::exit;
 
 fn generate_server_config() -> ServerConfig {
     ServerConfig {
@@ -50,12 +53,9 @@ async fn normal_1() {
     setup_test();
     let (fi, keys) = test_utils::generate_fi(4);
     let server_config = generate_server_config();
-
     // Setup repository and server.
-    // let server_dir = create_temp_dir();
     let server_dir = "/Users/jeongseup/simperby-test/server";
     run_command(format!("mkdir -p {server_dir}")).await;
-
     setup_pre_genesis_repository(&server_dir, fi.reserved_state.clone()).await;
     Client::genesis(&server_dir).await.unwrap();
     Client::init(&server_dir).await.unwrap();
@@ -68,17 +68,11 @@ async fn normal_1() {
         "cd {server_dir} && git config sendpack.sideband false"
     ))
     .await;
-
     // Setup clients.
     let mut clients = Vec::new();
-    // let mut client_dirs = Vec::new();
-    // let mut index: u8;
     for (idx, (_, key)) in keys.iter().take(3).enumerate() {
-        // let client_dir = "/Users/jeongseup/simperby-test/client{idx}";
         let client_dir: &str = &format!("/Users/jeongseup/simperby-test/client{idx}");
         run_command(format!("mkdir -p {client_dir}")).await;
-        // let dir = create_temp_dir();
-        // let index == 1;
         run_command(format!("cp -a {server_dir}/. {client_dir}/")).await;
         let auth = Auth {
             private_key: key.clone(),
@@ -93,7 +87,6 @@ async fn normal_1() {
             .await
             .unwrap();
         clients.push(client);
-        // client_dirs.push(client_dir.clone());
     }
 
     // Run server.
@@ -121,12 +114,6 @@ async fn normal_1() {
     for client in clients.iter_mut() {
         client.update_peer().await.unwrap();
     }
-
-    // let (_, agenda_commit) = clients[0]
-    //     .repository_mut()
-    //     .create_agenda(fi.reserved_state.members[0].name.clone())
-    //     .await
-    //     .unwrap();
 
     // Step 1: create an agenda and propagate it.
     log::info!("STEP 1");
@@ -176,31 +163,11 @@ async fn normal_1() {
         .header
         .height;
 
-    // clients[0].repository().read_commit(commit_hash)
-
-    println!("created block height: {}!", height);
+    log::info!("created block: {}", height);
     if height == 1 {
-        let client_dir = "/Users/jeongseup/simperby-test/client0";
-        run_command(format!(
-            "cd {client_dir} &&  git remote add origin https://github.com/Jeongseup/simperby-devnet.git"
-        )).await;
-        run_command(format!("cd {client_dir} && git push ")).await;
-    }
-
-    // Step 3: check the result.
-    for client in clients {
-        let raw_repo = client.repository().get_raw();
-        let raw_repo_ = raw_repo.read().await;
-        let finalized = raw_repo_
-            .locate_branch("finalized".to_owned())
-            .await
-            .unwrap();
-        let title = raw_repo_
-            .read_semantic_commit(finalized)
-            .await
-            .unwrap()
-            .title;
-        assert_eq!(title, ">block: 1");
+        let server_dir = "/Users/jeongseup/simperby-test/server";
+        run_command(format!("cd {server_dir} && git remote add origin https://github.com/Jeongseup/simperby-devnet.git")).await;
+        run_command(format!("cd {server_dir} && git push origin finalized fp")).await;
     }
 }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-test_dir="/Users/jeongseup/simperby-test"
+# "/Users/jeongseup/simperby-test/
+test_dir="$HOME/simperby-test"
 rm -rf $test_dir/client0
 rm -rf $test_dir/client1
 rm -rf $test_dir/client2
